@@ -12,7 +12,7 @@ export const schema = {
     type: 'object',
 };
 
-export async function main(args: { name: String, order: Number }) {
+export async function main(args: { name: string, order: number }) {
     const connection = await createConnection();
 
     try {

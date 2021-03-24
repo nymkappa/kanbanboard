@@ -9,10 +9,10 @@ export class Category extends BaseEntity {
     id: number;
 
     @Column()
-    name: String;
+    name: string;
 
     @Column()
-    order: Number;
+    order: number;
 
     @OneToMany(() => Card, card => card.category)
     cards: Card[];

@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Category } from './category.entity';
 
 @Entity()
@@ -12,20 +12,20 @@ export class Card extends BaseEntity {
     category: Category;
 
     @Column()
-    name: String;
+    name: string;
 
-    @Column()
-    Description: String;
+    @Column({ nullable: true })
+    description: string;
 
-    @Column()
+    @CreateDateColumn()
     created_at: Date;
 
-    @Column()
+    @UpdateDateColumn()
     updated_at: Date;
 
     @Column()
     order: Number;
 
-    @Column()
+    @Column({ nullable: true })
     status: String;
 }

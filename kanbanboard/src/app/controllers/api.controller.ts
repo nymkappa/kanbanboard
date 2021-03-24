@@ -3,14 +3,14 @@ import {
     HttpResponseNotFound, HttpResponseOK, Post
 } from '@foal/core';
 
-import { Card } from '../entities';
+import { Category } from '../entities';
 
 export class ApiController {
 
-    @Get('/todos')
-    async getTodos() {
-        const cards = await Card.find();
-        return new HttpResponseOK(cards);
+    @Get('/categories')
+    async getCategories() {
+        const categories = await Category.find();
+        return new HttpResponseOK(categories);
     }
 
 }

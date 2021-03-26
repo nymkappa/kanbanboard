@@ -1,16 +1,8 @@
-import {
-    Context, Delete, Get, HttpResponseCreated, HttpResponseNoContent,
-    HttpResponseNotFound, HttpResponseOK, Post
-} from '@foal/core';
-
-import { Category } from '../entities';
+import { controller } from '@foal/core';
+import { CategoriesController } from './categories.controller';
 
 export class ApiController {
-
-    @Get('/categories')
-    async getCategories() {
-        const categories = await Category.find();
-        return new HttpResponseOK(categories);
-    }
-
+    subControllers = [
+        controller('/categories', CategoriesController),
+    ];
 }

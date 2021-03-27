@@ -93,7 +93,7 @@ describe('CategoriesController', () => {
         });
 
         /******************/
-        it('should return an empty HttpResponseOK with a invalid category id', async () => {
+        it('should return an empty HttpResponseOK with an invalid category id', async () => {
             const response = await controller.getCategory(new Context({}), { categoryId: 424242424242424 });
             ok(isHttpResponseBadRequest(response), 'response should be an instance of HttpResponseBadRequest.');
             ok(response.body, 'This category id does not exists');

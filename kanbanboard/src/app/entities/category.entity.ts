@@ -11,7 +11,8 @@ export class Category extends BaseEntity {
     @Column()
     name: string;
 
-    @Column()
+    // Not a great default ("magic number") but it's very unlikely someone will ever need so many categories
+    @Column({ default: 999999 })
     order: number;
 
     @OneToMany(() => Card, card => card.category)

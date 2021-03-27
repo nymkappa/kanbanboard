@@ -24,7 +24,7 @@ export class Card extends BaseEntity {
     updated_at: Date;
 
     @Column()
-    order: Number;
+    order: number;
 
     @Column({ nullable: true })
     status: String;

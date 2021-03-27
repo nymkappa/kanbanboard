@@ -8,7 +8,7 @@ export const schema = {
         name: { type: 'string' },
         order: { type: 'number' },
     },
-    required: ['name', 'order'],
+    required: ['name'],
     type: 'object',
 };
 

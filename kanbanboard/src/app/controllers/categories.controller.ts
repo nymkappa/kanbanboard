@@ -1,6 +1,6 @@
 import { HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, Post, Put, ValidateBody, ValidatePathParam } from '@foal/core';
 import { Context, Delete, Get, HttpResponseOK } from '@foal/core';
-import { createConnection, Equal, getConnection, Not } from 'typeorm';
+import { Equal, getConnection, Not } from 'typeorm';
 import { Category } from '../entities/category.entity';
 
 export class CategoriesController {
@@ -45,7 +45,6 @@ export class CategoriesController {
         var newCategoryName = ctx.request.body.name ?? null;
 
         var category = await Category.findOne({ id: categoryId });
-
         if (!category) {
             return new HttpResponseBadRequest("This category id does not exists");
         }
@@ -60,7 +59,7 @@ export class CategoriesController {
     }
 
     /**
-     * Update a category name
+     * Reorder a category
      */
     @Put('/reorder/:categoryId')
     @ValidateBody({

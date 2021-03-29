@@ -19,11 +19,6 @@ describe('CategoriesController', () => {
 
     // Create a connection to the database before running all the tests.
     before(async () => {
-        // The connection uses the configuration defined in the file config/test.json.
-        // By default, the file has three connection options:
-        //  "database": "./test_db.sqlite3" -> Use a different database for running the tests.
-        // "synchronize": true ->  Auto create the database schema when the connection is established.
-        // "dropSchema": true -> Drop the schema when the connection is established (empty the database).
         connection = await createConnection();
 
         // Create some test categories
@@ -52,7 +47,6 @@ describe('CategoriesController', () => {
         it('should handle requests at GET /categories', () => {
             strictEqual(getHttpMethod(CategoriesController, 'getCategories'), 'GET');
             strictEqual(getPath(CategoriesController, 'getCategories'), '/');
-            strictEqual(getPath(CategoriesController, 'getCategory'), '/:categoryId');
         });
 
         /******************/
@@ -76,6 +70,12 @@ describe('CategoriesController', () => {
      * GET /categories/:categoryId
      */
     describe('has a "getCategory" method that', () => {
+
+        /******************/
+        it('should handle requests at GET /categories/:categoryId', () => {
+            strictEqual(getHttpMethod(CategoriesController, 'getCategory'), 'GET');
+            strictEqual(getPath(CategoriesController, 'getCategory'), '/:categoryId');
+        });
 
         /******************/
         it('should return an HttpResponseOK with a valid category id', async () => {
@@ -106,7 +106,7 @@ describe('CategoriesController', () => {
     describe('has a "deleteCategory" method that', () => {
 
         /******************/
-        it('should handle requests at DELETE /categories', () => {
+        it('should handle requests at DELETE /categories/:categoryId', () => {
             strictEqual(getHttpMethod(CategoriesController, 'deleteCategory'), 'DELETE');
             strictEqual(getPath(CategoriesController, 'deleteCategory'), '/:categoryId');
         });
@@ -160,7 +160,7 @@ describe('CategoriesController', () => {
 
             ok(body instanceof Object, 'The body of the response should be an object');
             ok(body.name == "New category", 'The name of the create category should be "New category"');
-            ok(body.order == 999999, 'The default category order index shoudl be 999999');
+            ok(body.order == 999999, 'The default category order index should be 999999');
 
             // Verify that the element was properly created
             const responseGet = await controller.getCategory(new Context({}), { categoryId: body.id });
@@ -186,7 +186,7 @@ describe('CategoriesController', () => {
     describe('has a "updateCategory" method that', () => {
 
         /******************/
-        it('should handle requests at PUT /categories', () => {
+        it('should handle requests at PUT /categories/:categoryId', () => {
             strictEqual(getHttpMethod(CategoriesController, 'updateCategory'), 'PUT');
             strictEqual(getPath(CategoriesController, 'updateCategory'), '/:categoryId');
         });
@@ -194,8 +194,7 @@ describe('CategoriesController', () => {
         /******************/
         // Terra: User can modify column name
         it('should update a category with a valid input', async () => {
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
-            const categoryToUpdate = categories[0];
+            var categoryToUpdate = (await Category.find())[0]; // We don't check here but there should be some categories already
 
             const ctx = new Context({
                 body: {
@@ -225,8 +224,7 @@ describe('CategoriesController', () => {
 
         /******************/
         it('should fail to update a category with a missing category name', async () => {
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
-            const categoryToUpdate = categories[0];
+            var categoryToUpdate = (await Category.find())[0]; // We don't check here but there should be some categories already
 
             const ctx = new Context({
                 body: {
@@ -242,10 +240,10 @@ describe('CategoriesController', () => {
     /**
      * PUT /categories/reorder
      */
-     describe('has a "reorderCategory" method that', () => {
+    describe('has a "reorderCategory" method that', () => {
 
         /******************/
-        it('should handle requests at PUT /categories/reorder', () => {
+        it('should handle requests at PUT /catgories/reorder/:categoryId', () => {
             strictEqual(getHttpMethod(CategoriesController, 'reorderCategory'), 'PUT');
             strictEqual(getPath(CategoriesController, 'reorderCategory'), '/reorder/:categoryId');
         });
@@ -253,7 +251,7 @@ describe('CategoriesController', () => {
         /******************/
         // Terra: User can modify column ordering
         it('should allow re-ordering a category', async () => {
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
+            var categories = await Category.find();
             const lastCategory = categories[categories.length - 1]; // Get last category, we will re-order it to index 1
 
             const ctx = new Context({
@@ -266,8 +264,7 @@ describe('CategoriesController', () => {
             ok(isHttpResponseOK(response), 'response should be an instance of HttpResponseOK.');
 
             // Verify that elements were properly re-orderer
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
-
+            categories = await Category.find({ order: { order: 'ASC' } });
             ok(categories[0].id === lastCategory.id, 'the category has not been moved properly.');
             for (let i = 0; i < categories.length; ++i) {
                 ok(categories[i].order === i + 1, 'categories order index should be set properly.');
@@ -288,8 +285,7 @@ describe('CategoriesController', () => {
 
         /******************/
         it('should fail to update a category with a missing order index', async () => {
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
-            const categoryToUpdate = categories[0];
+            const categoryToUpdate = (await Category.find())[0];
 
             const ctx = new Context({
                 body: {

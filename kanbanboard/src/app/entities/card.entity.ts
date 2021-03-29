@@ -23,7 +23,7 @@ export class Card extends BaseEntity {
     @UpdateDateColumn()
     updated_at: Date;
 
-    @Column()
+    @Column({ default: 999999 })
     order: number;
 
     @Column({ nullable: true })

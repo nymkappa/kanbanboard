@@ -8,8 +8,8 @@ export class Card extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Category, category => category.cards)
-    category: Category;
+    @ManyToOne(() => Category, category => category.cards, { nullable: true })
+    category: Category | null;
 
     @Column()
     name: string;

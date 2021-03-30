@@ -1,27 +1,8 @@
-import { Context, Get, HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, HttpResponseOK, Post, Put, ValidateBody } from '@foal/core';
-import { notEqual } from 'assert';
+import { Context, Get, HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, HttpResponseOK, Post, Put, ValidateBody, ValidatePathParam } from '@foal/core';
 import { Equal, getConnection, Not } from 'typeorm';
 import { Card, Category } from '../entities';
 
 export class CardsController {
-
-    @Get('/')
-    async getCards() {
-        let categories = await Category.find();
-
-        // Create some test card
-        let cards: Card[] = [];
-        for (let i = 0; i < 5; ++i) {
-            let card = new Card();
-            card.name = 'Card ' + String(i + 1);
-            card.description = 'Card description ' + String(i + 1);
-            card.category = categories[0];
-            cards.push(card);
-        }
-        await getConnection().manager.save(cards);
-
-        return new HttpResponseOK();
-    }
 
     /**
      * Create a new card
@@ -39,7 +20,7 @@ export class CardsController {
     })
     async createCard(ctx: Context) {
         try {
-            var category = await Category.findOneOrFail({ id: ctx.request.body.categoryId });
+            var category: Category = await Category.findOneOrFail({ id: ctx.request.body.categoryId });
         } catch (e) {
             return new HttpResponseBadRequest("This category id does not exists");
         }
@@ -47,10 +28,12 @@ export class CardsController {
         const card = new Card();
         card.name = ctx.request.body.name;
         card.category = category;
-        card.description = ctx.request.body.description ?? null;
+        if (ctx.request.body.description) {
+            card.description = ctx.request.body.description;
+        }
 
         try {
-            var createdCard = await card.save();
+            var createdCard: Card = await card.save();
             return new HttpResponseCreated(createdCard);
         } catch (e) {
             return new HttpResponseInternalServerError("Unable to create the new card");
@@ -58,7 +41,7 @@ export class CardsController {
     }
 
     /**
-     * Update a card data
+     * Update a card
      */
     @Put('/:cardId')
     @ValidateBody({
@@ -66,15 +49,24 @@ export class CardsController {
         properties: {
             name: { type: 'string' },
             description: { type: 'string' },
+            status: { type: 'string' },
         },
-        required: ['name', 'description'],
         type: 'object',
     })
     async updateCard(ctx: Context, { cardId }) {
         try {
-            var card = await Card.findOneOrFail({ id: cardId });
-            card.name = ctx.request.body.name;
-            card.description = ctx.request.body.description ?? null;
+            var card: Card = await Card.findOneOrFail({ id: cardId });
+            if (ctx.request.body.name) {
+                card.name = ctx.request.body.name;
+            }
+            if (ctx.request.body.description) {
+                card.description = ctx.request.body.description;
+            }
+            if (ctx.request.body.status) {
+                card.status = ctx.request.body.status;
+                // If we archive a card, consider that it also has no category anymore
+                card.category = null;
+            }
             await card.save();
 
             return new HttpResponseOK();
@@ -96,14 +88,14 @@ export class CardsController {
         type: 'object',
     })
     async reorderCard(ctx: Context, { cardId }) {
-        var newCardOrderIndex = ctx.request.body.order ?? 0;
+        var newCardOrderIndex: number = ctx.request.body.order ?? 0;
         if (!newCardOrderIndex || newCardOrderIndex < 1) {
             return new HttpResponseBadRequest("Invalid card order index");
         }
 
         // Find the card matching the id
         try {
-            var cardToUpdate = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
+            var cardToUpdate: Card = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
         } catch (e) {
             return new HttpResponseBadRequest("This card id does not exists");
         }
@@ -113,7 +105,7 @@ export class CardsController {
             // NOTE: Maybe we could avoid this process. See CategoriesController::reorderCategory()
 
             // Get all cards from the same category
-            var cards = await Card.find({
+            var cards: Card[] = await Card.find({
                 where: { category: cardToUpdate.category, id: Not(Equal(cardToUpdate.id)) },
                 order: { order: 'ASC' }
             });
@@ -150,8 +142,8 @@ export class CardsController {
     async categorizeCard(ctx: Context, { cardId }) {
         // Find the card matching the id and update its category
         try {
-            var category = await Category.findOneOrFail({ id: ctx.request.body.categoryId });
-            var cardToUpdate = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
+            var category: Category = await Category.findOneOrFail({ id: ctx.request.body.categoryId });
+            var cardToUpdate: Card = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
             cardToUpdate.category = category;
             await cardToUpdate.save();
         } catch (e) {
@@ -161,4 +153,27 @@ export class CardsController {
         // Now re-order the category cards
         return this.reorderCard(ctx, { cardId });
     }
-}
+
+    /**
+     * Get all cards
+     */
+     @Get('/')
+     async getCards() {
+         var cards: Card[] = await Card.find();
+         return new HttpResponseOK(cards);
+     }
+
+     /**
+     * Get one card
+     */
+     @Get('/:cardId')
+     @ValidatePathParam('cardId', { type: 'integer' })
+     async getCard(ctx: Context, { cardId }) {
+         var card: Card|undefined = await Card.findOne({ id: cardId });
+         if (!card) {
+             return new HttpResponseBadRequest("This card id does not exists");
+         } else {
+             return new HttpResponseOK([card]);
+         }
+     }
+ }

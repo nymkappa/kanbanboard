@@ -22,7 +22,7 @@ export class CategoriesController {
         category.name = ctx.request.body.name ?? null;
 
         try {
-            var createdCategory = await category.save();
+            var createdCategory: Category = await category.save();
             return new HttpResponseCreated(createdCategory);
         } catch (e) {
             return new HttpResponseInternalServerError("Unable to create the new category");
@@ -44,8 +44,9 @@ export class CategoriesController {
     async updateCategory(ctx: Context, { categoryId }) {
         var newCategoryName = ctx.request.body.name ?? null;
 
-        var category = await Category.findOne({ id: categoryId });
-        if (!category) {
+        try {
+            var category: Category = await Category.findOneOrFail({ id: categoryId });
+        } catch (e) {
             return new HttpResponseBadRequest("This category id does not exists");
         }
 
@@ -71,14 +72,14 @@ export class CategoriesController {
         type: 'object',
     })
     async reorderCategory(ctx: Context, { categoryId }) {
-        var newCategoryOrderIndex = ctx.request.body.order ?? 0;
+        var newCategoryOrderIndex: number = ctx.request.body.order ?? 0;
         if (!newCategoryOrderIndex || newCategoryOrderIndex < 1) {
             return new HttpResponseBadRequest("Invalid category order index");
         }
 
         // Find the category matching the id
         try {
-            var categoryToUpdate = await Category.findOneOrFail({ id: categoryId });
+            var categoryToUpdate: Category = await Category.findOneOrFail({ id: categoryId });
         } catch (e) {
             return new HttpResponseBadRequest("This category id does not exists");
         }
@@ -97,7 +98,7 @@ export class CategoriesController {
             // categoryD { order: 3, order_updated_at: .......... }
 
             // Get all categories but the one we just updated
-            var categories = await Category.find({ where: { id: Not(Equal(categoryToUpdate.id)) }, order: { "order": "ASC" } });
+            var categories: Category[] = await Category.find({ where: { id: Not(Equal(categoryToUpdate.id)) }, order: { "order": "ASC" } });
 
             // Insert the category we've updated at the desired position
             categories.splice(newCategoryOrderIndex - 1, 0, categoryToUpdate);
@@ -120,7 +121,7 @@ export class CategoriesController {
      */
     @Get('/')
     async getCategories() {
-        var categories = await Category.find({ order: { order: 'ASC' } });
+        var categories: Category[] = await Category.find({ order: { order: 'ASC' } });
         return new HttpResponseOK(categories);
     }
 
@@ -130,7 +131,7 @@ export class CategoriesController {
     @Get('/:categoryId')
     @ValidatePathParam('categoryId', { type: 'integer' })
     async getCategory(ctx: Context, { categoryId }) {
-        var category = await Category.findOne({ id: categoryId });
+        var category: Category|undefined = await Category.findOne({ id: categoryId });
         if (!category) {
             return new HttpResponseBadRequest("This category id does not exists");
         } else {

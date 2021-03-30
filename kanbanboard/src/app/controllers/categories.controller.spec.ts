@@ -63,7 +63,7 @@ describe('CategoriesController', () => {
             const body = response.body;
 
             ok(Array.isArray(body), 'The body of the response should be an array.');
-            ok(body.length == initialCategoryNumber, 'The body of the response should be an array of size' + String(initialCategoryNumber) + '.');
+            ok(body.length == initialCategoryNumber, 'The body of the response should be an array of size ' + String(initialCategoryNumber) + '.');
 
             strictEqual(body[0].name, 'Category 1');
             strictEqual(body[0].order, 1);
@@ -253,7 +253,7 @@ describe('CategoriesController', () => {
         });
 
         /******************/
-        // Terra: User can modify column ordering
+        // Terra: User can change column ordering
         it('should allow re-ordering a category', async () => {
             var categories = await Category.find();
             const lastCategory = categories[categories.length - 1]; // Get last category, we will re-order it to index 1

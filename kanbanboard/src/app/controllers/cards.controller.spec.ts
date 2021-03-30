@@ -34,7 +34,7 @@ describe('CardsController', () => {
         let cards: Card[] = [];
 
         let firstCard = new Card();
-        firstCard.name = 'Card 1';
+        firstCard.name = 'Card 1-1';
         firstCard.order = 1;
         firstCard.category = categories[0];
         cards.push(firstCard);
@@ -46,7 +46,7 @@ describe('CardsController', () => {
             newCard.category = categories[0];
             cards.push(newCard);
         }
-        for (let i = 1; i < initialCardNumber; ++i) {
+        for (let i = 0; i < initialCardNumber; ++i) {
             let newCard = new Card();
             newCard.name = 'Card 2-' + String(i + 1);
             newCard.order = 1 + Math.floor(Math.random() * 1000);
@@ -64,6 +64,66 @@ describe('CardsController', () => {
     });
 
     /**
+     * GET /cards
+     */
+     describe('has a "getCards" method that', () => {
+
+        /******************/
+        it('should handle requests at GET /cards', () => {
+            strictEqual(getHttpMethod(CardsController, 'getCards'), 'GET');
+            strictEqual(getPath(CardsController, 'getCards'), '/');
+        });
+
+        /******************/
+        it('should return an HttpResponseOK', async () => {
+            const response = await controller.getCards();
+            ok(isHttpResponseOK(response), 'response should be an instance of HttpResponseOK.');
+
+            const body = response.body;
+
+            ok(Array.isArray(body), 'The body of the response should be an array.');
+            ok(body.length == initialCardNumber * 2, 'The body of the response should be an array of size ' + String(initialCardNumber * 2) + '.');
+
+            strictEqual(body[0].name, 'Card 1-1');
+            strictEqual(body[0].order, 1);
+        });
+    });
+
+    /**
+     * GET /cards/:cardId
+     */
+    describe('has a "getCard" method that', () => {
+
+        /******************/
+        it('should handle requests at GET /cards/:cardId', () => {
+            strictEqual(getHttpMethod(CardsController, 'getCard'), 'GET');
+            strictEqual(getPath(CardsController, 'getCard'), '/:cardId');
+        });
+
+        /******************/
+        it('should return an HttpResponseOK with a valid card id', async () => {
+            const response = await controller.getCard(new Context({}), { cardId: 1 });
+
+            ok(isHttpResponseOK(response), 'response should be an instance of HttpResponseOK.');
+
+            const body = response.body;
+
+            ok(Array.isArray(body), 'The body of the response should be an array');
+            ok(body.length == 1, 'The body of the response should be an array of size 1.');
+
+            strictEqual(body[0].name, 'Card 1-1');
+            strictEqual(body[0].order, 1);
+        });
+
+        /******************/
+        it('should return an empty HttpResponseOK with an invalid card id', async () => {
+            const response = await controller.getCard(new Context({}), { cardId: 424242424242424 });
+            ok(isHttpResponseBadRequest(response), 'response should be an instance of HttpResponseBadRequest.');
+            ok(response.body, 'This card id does not exists');
+        });
+    });
+
+    /**
      * POST /cards
      */
     describe('has a "createCard" method that', () => {
@@ -73,6 +133,7 @@ describe('CardsController', () => {
             strictEqual(getPath(CardsController, 'createCard'), '/');
         });
 
+        // Terra: User can add card to column with name and description
         it('should create a new card with a valid input', async () => {
             let ctx = new Context({
                 body: {
@@ -133,13 +194,17 @@ describe('CardsController', () => {
             strictEqual(getPath(CardsController, 'updateCard'), '/:cardId');
         });
 
+        // Terra: User can modify card details
+        // Terra: User can archive card
+        // Terra: User can identify / switch status of card
         it('should allow a card details to be updated', async () => {
             var cardToUpdate = (await Card.find())[0]; // We don't check here but there should be some categories already
 
             let ctx = new Context({
                 body: {
                     name: "Card1 - Renamed",
-                    description: "Lot of things going on - Updated"
+                    description: "Lot of things going on - Updated",
+                    status: "archived",
                 }
             });
 
@@ -147,9 +212,11 @@ describe('CardsController', () => {
             ok(isHttpResponseOK(response), 'response should be an instance of isHttpResponseOK');
 
             // Verify
-            let updatedCard = await Card.findOneOrFail({ id: cardToUpdate.id });
+            let updatedCard = await Card.findOneOrFail({ id: cardToUpdate.id }, { relations: ['category'] });
             ok(updatedCard.name === 'Card1 - Renamed', 'The card name should have been updated properly');
             ok(updatedCard.description === 'Lot of things going on - Updated', 'The card description should have been updated properly');
+            ok(updatedCard.status === 'archived', 'The card status should have been updated to "archived"');
+            ok(updatedCard.category === null, 'The archived card should not be part of any category');
         });
     });
 
@@ -163,6 +230,7 @@ describe('CardsController', () => {
             strictEqual(getPath(CardsController, 'reorderCard'), '/reorder/:cardId');
         });
 
+        // Terra: User can change card ordering
         it('should allow a card to be reordered', async () => {
             var cards = await Card.find({ where: { category: categories[0] } });
             const lastCard = cards[cards.length - 1]; // Get last card, we will re-order it to index 1
@@ -190,7 +258,7 @@ describe('CardsController', () => {
     });
 
     /**
-     * PUT /cards/:cardId
+     * PUT /cards/categorize/:cardId
      */
     describe('has a "categorizeCard" method that', () => {
 
@@ -205,7 +273,7 @@ describe('CardsController', () => {
 
             let ctx = new Context({
                 body: {
-                    categoryId:  categories[1].id,
+                    categoryId: categories[1].id,
                     order: 1,
                 }
             });
@@ -219,7 +287,7 @@ describe('CardsController', () => {
                 order: { order: 'ASC' },
                 relations: ['category'],
             });
-            ok(cards[0].category.id === categories[1].id, 'the card category has not been updated properly.');
+            ok(cards[0].category?.id === categories[1].id, 'the card category has not been updated properly.');
             ok(cards[0].id === cardToUpdate.id, 'the card has not been moved properly.');
             for (let i = 0; i < cards.length; ++i) {
                 ok(cards[i].order === i + 1, 'cards order index should be set properly.');

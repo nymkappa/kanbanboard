@@ -66,7 +66,7 @@ describe('CardsController', () => {
     /**
      * GET /cards
      */
-     describe('has a "getCards" method that', () => {
+    describe('has a "getCards" method that', () => {
 
         /******************/
         it('should handle requests at GET /cards', () => {
@@ -296,4 +296,36 @@ describe('CardsController', () => {
 
     });
 
+    /**
+     * DELETE /cards/:cardId
+     */
+    describe('has a "deleteCard" method that', () => {
+
+        /******************/
+        it('should handle requests at DELETE /cards/:cardId', () => {
+            strictEqual(getHttpMethod(CardsController, 'deleteCard'), 'DELETE');
+            strictEqual(getPath(CardsController, 'deleteCard'), '/:cardId');
+        });
+
+        /******************/
+        it('should properly handle an invalid id', async () => {
+            const response = await controller.deleteCard(new Context({}), { cardId: -1 });
+            ok(isHttpResponseBadRequest(response), 'response should be an instance of HttpResponseBadRequest.');
+            ok(response.body, 'Nothing to delete');
+        });
+
+        /******************/
+        // Terra: User can delete a card
+        it('should return a HttpResponseOK and properly delete a category id', async () => {
+            var cardToDelete = (await Card.find())[0]; // We don't check here but there should be some categories already
+
+            const response = await controller.deleteCard(new Context({}), { cardId: cardToDelete.id });
+            ok(isHttpResponseOK(response), 'response should be an instance of HttpResponseOK.');
+
+            // Verify that the element was properly deleted
+            const responseGet = await controller.getCard(new Context({}), { cardId: cardToDelete.id });
+            ok(isHttpResponseBadRequest(responseGet), 'Category should be properly deleted');
+        });
+
+    });
 });

@@ -1,5 +1,5 @@
-import { Context, Get, HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, HttpResponseOK, Post, Put, ValidateBody, ValidatePathParam } from '@foal/core';
-import { Equal, getConnection, Not } from 'typeorm';
+import { Context, Delete, Get, HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, HttpResponseOK, Post, Put, ValidateBody, ValidatePathParam } from '@foal/core';
+import { Equal, getConnection, Not, RelationCount } from 'typeorm';
 import { Card, Category } from '../entities';
 
 export class CardsController {
@@ -157,23 +157,45 @@ export class CardsController {
     /**
      * Get all cards
      */
-     @Get('/')
-     async getCards() {
-         var cards: Card[] = await Card.find();
-         return new HttpResponseOK(cards);
-     }
+    @Get('/')
+    async getCards() {
+        var cards: Card[] = await Card.find({ relations: ['category'] });
+        return new HttpResponseOK(cards);
+    }
 
-     /**
-     * Get one card
+    /**
+    * Get one card
+    */
+    @Get('/:cardId')
+    @ValidatePathParam('cardId', { type: 'integer' })
+    async getCard(ctx: Context, { cardId }) {
+        var card: Card | undefined = await Card.findOne({ id: cardId }, { relations: ['category'] });
+        if (!card) {
+            return new HttpResponseBadRequest("This card id does not exists");
+        } else {
+            return new HttpResponseOK([card]);
+        }
+    }
+
+    /**
+     * Delete one card
      */
-     @Get('/:cardId')
+     @Delete('/:cardId')
      @ValidatePathParam('cardId', { type: 'integer' })
-     async getCard(ctx: Context, { cardId }) {
-         var card: Card|undefined = await Card.findOne({ id: cardId });
-         if (!card) {
+     async deleteCard(ctx: Context, { cardId }) {
+         try {
+             var card: Card = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
+             card.category = null;
+             card.save();
+
+             var res = await Card.delete({ id: cardId });
+             if (res.affected != 1) {
+                 return new HttpResponseBadRequest("Unable to delete the card");
+             } else {
+                 return new HttpResponseOK();
+             }
+         } catch (e) {
              return new HttpResponseBadRequest("This card id does not exists");
-         } else {
-             return new HttpResponseOK([card]);
          }
      }
  }

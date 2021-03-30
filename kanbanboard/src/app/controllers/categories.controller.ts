@@ -121,7 +121,7 @@ export class CategoriesController {
      */
     @Get('/')
     async getCategories() {
-        var categories: Category[] = await Category.find({ order: { order: 'ASC' } });
+        var categories: Category[] = await Category.find({ order: { order: 'ASC' }, relations: ['cards'] });
         return new HttpResponseOK(categories);
     }
 
@@ -131,11 +131,11 @@ export class CategoriesController {
     @Get('/:categoryId')
     @ValidatePathParam('categoryId', { type: 'integer' })
     async getCategory(ctx: Context, { categoryId }) {
-        var category: Category|undefined = await Category.findOne({ id: categoryId });
-        if (!category) {
-            return new HttpResponseBadRequest("This category id does not exists");
-        } else {
+        try {
+            var category: Category = await Category.findOneOrFail({ id: categoryId }, { relations: ['cards'] });
             return new HttpResponseOK([category]);
+        } catch (e) {
+            return new HttpResponseBadRequest("This category id does not exists");
         }
     }
 
@@ -145,11 +145,24 @@ export class CategoriesController {
     @Delete('/:categoryId')
     @ValidatePathParam('categoryId', { type: 'integer' })
     async deleteCategory(ctx: Context, { categoryId }) {
-        var res = await Category.delete({ id: categoryId });
-        if (res.affected != 1) {
+        try {
+            var category: Category = await Category.findOneOrFail({ id: categoryId }, { relations: ['cards'] });
+            category.cards.forEach(async (card) => {
+                card.category = null;
+                await card.save();
+            })
+
+            category.cards = [];
+            await category.save();
+
+            var res = await Category.delete({ id: categoryId });
+            if (res.affected != 1) {
+                return new HttpResponseBadRequest("Unable to delete the category");
+            } else {
+                return new HttpResponseOK();
+            }
+        } catch (e) {
             return new HttpResponseBadRequest("This category id does not exists");
-        } else {
-            return new HttpResponseOK();
         }
     }
 

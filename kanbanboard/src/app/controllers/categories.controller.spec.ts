@@ -7,7 +7,7 @@ import { Context, createController, getHttpMethod, getPath, isHttpResponseBadReq
 import { Connection, createConnection } from 'typeorm';
 
 // App
-import { Category } from '../entities';
+import { Card, Category } from '../entities';
 import { CategoriesController } from './categories.controller';
 
 // Define a group of tests.
@@ -16,6 +16,7 @@ describe('CategoriesController', () => {
     let controller: CategoriesController;
     let connection: Connection;
     let initialCategoryNumber: number = 5;
+    let initialCardNumber: number = 5;
 
     // Create a connection to the database before running all the tests.
     before(async () => {
@@ -36,6 +37,16 @@ describe('CategoriesController', () => {
             categories.push(newCategory);
         }
         await connection.manager.save(categories);
+
+        // Create some test cards
+        let cards: Card[] = [];
+        for (let i = 1; i < initialCardNumber; ++i) {
+            let newCard = new Card();
+            newCard.name = 'Card 1-' + String(i + 1);
+            newCard.order = 1 + Math.floor(Math.random() * 1000);
+            newCard.category = categories[0];
+            cards.push(newCard);
+        }
     });
 
     // Close the database connection after running all the tests whether they succeed or failed.
@@ -125,8 +136,7 @@ describe('CategoriesController', () => {
         /******************/
         // Terra: User can delete column
         it('should return a HttpResponseOK and properly delete a category id', async () => {
-            var categories = await (await controller.getCategories()).body; // We don't check here but there should be some categories already
-            const categoryToDelete = categories[0];
+            var categoryToDelete = (await Category.find())[0]; // We don't check here but there should be some categories already
 
             const response = await controller.deleteCategory(new Context({}), { categoryId: categoryToDelete.id });
             ok(isHttpResponseOK(response), 'response should be an instance of HttpResponseOK.');

@@ -148,6 +148,17 @@ export class CardsController {
         type: 'object',
     })
     async categorizeCard(ctx: Context, { cardId }) {
-        return new HttpResponseOK();
+        // Find the card matching the id and update its category
+        try {
+            var category = await Category.findOneOrFail({ id: ctx.request.body.categoryId });
+            var cardToUpdate = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
+            cardToUpdate.category = category;
+            await cardToUpdate.save();
+        } catch (e) {
+            return new HttpResponseBadRequest("This card id does not exists");
+        }
+
+        // Now re-order the category cards
+        return this.reorderCard(ctx, { cardId });
     }
 }

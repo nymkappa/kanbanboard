@@ -39,11 +39,18 @@ describe('CardsController', () => {
         firstCard.category = categories[0];
         cards.push(firstCard);
 
-        for (let i = 1; i < initialCategoryNumber; ++i) {
+        for (let i = 1; i < initialCardNumber; ++i) {
             let newCard = new Card();
-            newCard.name = 'Card ' + String(i + 1);
+            newCard.name = 'Card 1-' + String(i + 1);
             newCard.order = 1 + Math.floor(Math.random() * 1000);
             newCard.category = categories[0];
+            cards.push(newCard);
+        }
+        for (let i = 1; i < initialCardNumber; ++i) {
+            let newCard = new Card();
+            newCard.name = 'Card 2-' + String(i + 1);
+            newCard.order = 1 + Math.floor(Math.random() * 1000);
+            newCard.category = categories[1];
             cards.push(newCard);
         }
         await connection.manager.save(cards);
@@ -69,7 +76,7 @@ describe('CardsController', () => {
         it('should create a new card with a valid input', async () => {
             let ctx = new Context({
                 body: {
-                    categoryId: categories[1].id,
+                    categoryId: categories[2].id,
                     name: "New Card",
                     description: "Lot of things going on"
                 }
@@ -87,7 +94,7 @@ describe('CardsController', () => {
 
             // Now we double check that the relation between the card and its category is properly setup
             var category = await Category.findOneOrFail(
-                { id: categories[1].id },
+                { id: categories[2].id },
                 { relations: ['cards'] },
             );
 
@@ -179,6 +186,7 @@ describe('CardsController', () => {
                 ok(cards[i].order === i + 1, 'cards order index should be set properly.');
             }
         });
+
     });
 
     /**
@@ -189,6 +197,33 @@ describe('CardsController', () => {
         it('should handle requests at PUT /cards/categorize/:cardId', () => {
             strictEqual(getHttpMethod(CardsController, 'categorizeCard'), 'PUT');
             strictEqual(getPath(CardsController, 'categorizeCard'), '/categorize/:cardId');
+        });
+
+        it('should allow a card category to be changed', async () => {
+            var cards = await Card.find({ where: { category: categories[0] } });
+            const cardToUpdate = cards[cards.length - 1]; // Get last card, we will move it to category 2 and re-order it to index 1
+
+            let ctx = new Context({
+                body: {
+                    categoryId:  categories[1].id,
+                    order: 1,
+                }
+            });
+
+            const response = await controller.categorizeCard(ctx, { cardId: cardToUpdate.id });
+            ok(isHttpResponseOK(response), 'response should be an instance of isHttpResponseOK');
+
+            // Verify that elements were properly re-orderer
+            cards = await Card.find({
+                where: { category: categories[1] },
+                order: { order: 'ASC' },
+                relations: ['category'],
+            });
+            ok(cards[0].category.id === categories[1].id, 'the card category has not been updated properly.');
+            ok(cards[0].id === cardToUpdate.id, 'the card has not been moved properly.');
+            for (let i = 0; i < cards.length; ++i) {
+                ok(cards[i].order === i + 1, 'cards order index should be set properly.');
+            }
         });
 
     });

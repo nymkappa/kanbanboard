@@ -96,7 +96,7 @@ export class CategoriesController {
             // categoryA { order: 2, order_updated_at: 1516812153 }
             // categoryD { order: 3, order_updated_at: .......... }
 
-            // Get all categorie but the one we just updated
+            // Get all categories but the one we just updated
             var categories = await Category.find({ where: { id: Not(Equal(categoryToUpdate.id)) }, order: { "order": "ASC" } });
 
             // Insert the category we've updated at the desired position

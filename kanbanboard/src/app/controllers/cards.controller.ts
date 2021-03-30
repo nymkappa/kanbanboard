@@ -1,5 +1,6 @@
 import { Context, Get, HttpResponseBadRequest, HttpResponseCreated, HttpResponseInternalServerError, HttpResponseOK, Post, Put, ValidateBody } from '@foal/core';
-import { getConnection } from 'typeorm';
+import { notEqual } from 'assert';
+import { Equal, getConnection, Not } from 'typeorm';
 import { Card, Category } from '../entities';
 
 export class CardsController {
@@ -70,7 +71,16 @@ export class CardsController {
         type: 'object',
     })
     async updateCard(ctx: Context, { cardId }) {
-        return new HttpResponseOK();
+        try {
+            var card = await Card.findOneOrFail({ id: cardId });
+            card.name = ctx.request.body.name;
+            card.description = ctx.request.body.description ?? null;
+            await card.save();
+
+            return new HttpResponseOK();
+        } catch (e) {
+            return new HttpResponseInternalServerError("Unable to update the card");
+        }
     }
 
     /**
@@ -86,7 +96,42 @@ export class CardsController {
         type: 'object',
     })
     async reorderCard(ctx: Context, { cardId }) {
-        return new HttpResponseOK();
+        var newCardOrderIndex = ctx.request.body.order ?? 0;
+        if (!newCardOrderIndex || newCardOrderIndex < 1) {
+            return new HttpResponseBadRequest("Invalid card order index");
+        }
+
+        // Find the card matching the id
+        try {
+            var cardToUpdate = await Card.findOneOrFail({ id: cardId }, { relations: ['category'] });
+        } catch (e) {
+            return new HttpResponseBadRequest("This card id does not exists");
+        }
+
+        // Get all card from the 'cardToUpdate.category' and reorder them
+        try {
+            // NOTE: Maybe we could avoid this process. See CategoriesController::reorderCategory()
+
+            // Get all cards from the same category
+            var cards = await Card.find({
+                where: { category: cardToUpdate.category, id: Not(Equal(cardToUpdate.id)) },
+                order: { order: 'ASC' }
+            });
+
+            // Insert the card we've updated at the desired position
+            cards.splice(newCardOrderIndex - 1, 0, cardToUpdate);
+
+            // Update all order index and save all entities in the db
+            cards.forEach((entity, newOrderIndex) => {
+                entity.order = newOrderIndex + 1;
+            })
+            var connection = await getConnection();
+            await connection.manager.save(cards);
+
+            return new HttpResponseOK();
+        } catch (e) {
+            return new HttpResponseInternalServerError("Unable to update the new category");
+        }
     }
 
     /**

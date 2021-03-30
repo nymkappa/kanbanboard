@@ -32,12 +32,19 @@ describe('CardsController', () => {
 
         // Create some test cards
         let cards: Card[] = [];
-        for (let i = 0; i < initialCardNumber; ++i) {
-            let card = new Card();
-            card.name = 'Card ' + String(i + 1);
-            card.description = 'Card description ' + String(i + 1);
-            card.category = categories[0];
-            cards.push(card);
+
+        let firstCard = new Card();
+        firstCard.name = 'Card 1';
+        firstCard.order = 1;
+        firstCard.category = categories[0];
+        cards.push(firstCard);
+
+        for (let i = 1; i < initialCategoryNumber; ++i) {
+            let newCard = new Card();
+            newCard.name = 'Card ' + String(i + 1);
+            newCard.order = 1 + Math.floor(Math.random() * 1000);
+            newCard.category = categories[0];
+            cards.push(newCard);
         }
         await connection.manager.save(cards);
     });
@@ -63,7 +70,7 @@ describe('CardsController', () => {
             let ctx = new Context({
                 body: {
                     categoryId: categories[1].id,
-                    name: "Card1",
+                    name: "New Card",
                     description: "Lot of things going on"
                 }
             });
@@ -74,7 +81,7 @@ describe('CardsController', () => {
             var body = response.body;
 
             ok(body instanceof Object, 'The body of the response should be an object');
-            ok(body.name == "Card1", 'The name of the created category should be "Card1"');
+            ok(body.name == "New Card", 'The name of the created category should be "Card1"');
             ok(body.description == "Lot of things going on", 'The description of the card should be "Lot of things going on"');
             ok(body.order == 999999, 'The default category order index should be 999999');
 
@@ -150,7 +157,7 @@ describe('CardsController', () => {
         });
 
         it('should allow a card to be reordered', async () => {
-            var cards = await Card.find({ where: { category: categories[0] } } );
+            var cards = await Card.find({ where: { category: categories[0] } });
             const lastCard = cards[cards.length - 1]; // Get last card, we will re-order it to index 1
 
             let ctx = new Context({
@@ -159,12 +166,15 @@ describe('CardsController', () => {
                 }
             });
 
-            const response = await controller.updateCard(ctx, { cardId: lastCard.id });
+            const response = await controller.reorderCard(ctx, { cardId: lastCard.id });
             ok(isHttpResponseOK(response), 'response should be an instance of isHttpResponseOK');
 
             // Verify that elements were properly re-orderer
-            cards = await Card.find({ where: { category: categories[0] }, order: { order: 'ASC' } });
-            ok(lastCard[0].id === lastCard.id, 'the card has not been moved properly.');
+            cards = await Card.find({
+                where: { category: categories[0] },
+                order: { order: 'ASC' }
+            });
+            ok(cards[0].id === lastCard.id, 'the card has not been moved properly.');
             for (let i = 0; i < cards.length; ++i) {
                 ok(cards[i].order === i + 1, 'cards order index should be set properly.');
             }

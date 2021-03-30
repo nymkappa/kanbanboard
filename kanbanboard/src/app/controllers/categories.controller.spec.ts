@@ -23,10 +23,16 @@ describe('CategoriesController', () => {
 
         // Create some test categories
         let categories: Category[] = [];
-        for (let i = 0; i < initialCategoryNumber; ++i) {
+
+        let fistCategory = new Category();
+        fistCategory.name = 'Category 1';
+        fistCategory.order = 1;
+        categories.push(fistCategory);
+
+        for (let i = 1; i < initialCategoryNumber; ++i) {
             let newCategory = new Category();
             newCategory.name = 'Category ' + String(i + 1);
-            newCategory.order = i + 1;
+            newCategory.order = 1 + Math.floor(Math.random() * 1000);
             categories.push(newCategory);
         }
         await connection.manager.save(categories);
@@ -61,8 +67,6 @@ describe('CategoriesController', () => {
 
             strictEqual(body[0].name, 'Category 1');
             strictEqual(body[0].order, 1);
-            strictEqual(body[1].name, 'Category 2');
-            strictEqual(body[1].order, 2);
         });
     });
 

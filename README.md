@@ -1,6 +1,6 @@
 # Kanbanboard
 
-Typescript implementation of a Kanban baord using FoalTS for the backend and VueJS for the front-end
+Typescript implementation of a Kanban baord using FoalTS.
 
 # How to run the backend
 

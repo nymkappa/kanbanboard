@@ -17,12 +17,5 @@ COPY . .
 
 EXPOSE 3001
 
-# Run tests
-RUN npm run build:test
-RUN npm run start:test
-
-# Run migrations
-RUN npm run migrations
-
-# Run the servere
-CMD ["npm", "run", "develop"]
+# Run the server
+CMD ["./running-script.sh"]

@@ -4,7 +4,6 @@ Typescript implementation of a Kanban baord using FoalTS for the backend and Vue
 
 # How to run the backend
 
-1. `cd kanbanboard`
 2. `docker build --tag kanbanboard .`
 3. `docker run --publish 3001:3001 kanbanboard`
 

@@ -15,3 +15,4 @@ Verify that the server is running at http://localhost:3001/api/categories/
 1. `cd kanbanboard`
 2. `npm run test`
 
+A [Postman collection](https://github.com/jorisvial/kanbanboard/blob/master/Kanbanboard%20Joris.postman_collection.json) is also provided to make testing the API easier.

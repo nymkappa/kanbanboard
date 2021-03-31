@@ -18,11 +18,11 @@ COPY . .
 EXPOSE 3001
 
 # Run tests
-CMD ["npm", "run", "build:test"]
-CMD ["npm", "run", "start:test"]
+RUN npm run build:test
+RUN npm run start:test
 
 # Run migrations
-CMD ["npm", "run", "migrations"]
+RUN npm run migrations
 
 # Run the servere
 CMD ["npm", "run", "develop"]

@@ -1,7 +1,7 @@
 {
   "name": "kanbanboard",
-  "version": "0.0.0",
-  "description": "description of the application",
+  "version": "0.0.1",
+  "description": "Coding challenge for Terra",
   "license": "MIT",
   "repository": {},
   "scripts": {

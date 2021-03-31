@@ -1,8 +1,8 @@
 # Kanbanboard
 
-Typescript implementation of a Kanban baord using FoalTS.
+Typescript implementation of a Kanban baord backend using FoalTS.
 
-# How to run the backend
+# How to build and run
 
 1. `npm install`
 2. `npm run build`
@@ -13,7 +13,7 @@ Typescript implementation of a Kanban baord using FoalTS.
 
 Verify that the server is running at http://localhost:3001/api/categories/
 
-# How to tests for the backend
+# How to run the tests
 
 1. `npm run test`
 
